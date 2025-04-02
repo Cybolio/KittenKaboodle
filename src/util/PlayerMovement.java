@@ -2,6 +2,8 @@ package util;
 
 import Main.GamePanel;
 
+import java.awt.*;
+
 public class PlayerMovement {
 
     private GamePanel gp;
@@ -13,6 +15,10 @@ public class PlayerMovement {
     public int worldY;
     public int screenX;
     public int screenY;
+    public int collisionOffsetX = 8;
+    public int collisionOffsetY = 16;
+    public int collisionWidth = 32;
+    public int collisionHeight = 32;
 
     public PlayerMovement(GamePanel gp) {
         this.gp = gp;
@@ -37,21 +43,26 @@ public class PlayerMovement {
             nextWorldY -= speed;
             direction = 1;
             isMoving = true;
-            // Check collision with tiles AND static sprites
+            // Check collision with tiles, static sprites, and entity sprites
+            Rectangle playerBounds = new Rectangle(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight);
             if (gp.getCollisionHandler().checkCollision(nextWorldX, nextWorldY, playerWidth, playerHeight, gp.getMapTileNum()) ||
-                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight)) {
+                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight) ||
+                    gp.checkEntitySpriteCollision(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight)) {
                 nextWorldY = worldY; // Collision detected, don't move
             } else {
                 worldY = nextWorldY; // No collision, update position
             }
+
         }
 
         if (gp.keyHandler.downPressed) {
             nextWorldY += speed;
             direction = 0;
             isMoving = true;
+            Rectangle playerBounds = new Rectangle(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight);
             if (gp.getCollisionHandler().checkCollision(nextWorldX, nextWorldY, playerWidth, playerHeight, gp.getMapTileNum()) ||
-                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight)) {
+                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight) ||
+                    gp.checkEntitySpriteCollision(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight)) {
                 nextWorldY = worldY;
             } else {
                 worldY = nextWorldY;
@@ -62,8 +73,10 @@ public class PlayerMovement {
             nextWorldX -= speed;
             direction = 2;
             isMoving = true;
+            Rectangle playerBounds = new Rectangle(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight);
             if (gp.getCollisionHandler().checkCollision(nextWorldX, nextWorldY, playerWidth, playerHeight, gp.getMapTileNum()) ||
-                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight)) {
+                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight) ||
+                    gp.checkEntitySpriteCollision(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight)) {
                 nextWorldX = worldX;
             } else {
                 worldX = nextWorldX;
@@ -74,8 +87,10 @@ public class PlayerMovement {
             nextWorldX += speed;
             direction = 3;
             isMoving = true;
+            Rectangle playerBounds = new Rectangle(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight);
             if (gp.getCollisionHandler().checkCollision(nextWorldX, nextWorldY, playerWidth, playerHeight, gp.getMapTileNum()) ||
-                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight)) {
+                    gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight) ||
+                    gp.checkEntitySpriteCollision(nextWorldX + collisionOffsetX, nextWorldY + collisionOffsetY, collisionWidth, collisionHeight)) {
                 nextWorldX = worldX;
             } else {
                 worldX = nextWorldX;

@@ -4,6 +4,8 @@ import Main.GamePanel;
 import tiles.Tile;
 import tiles.TileManager;
 
+import java.awt.*;
+
 public class CollisionHandler {
 
     private GamePanel gp;
@@ -50,6 +52,30 @@ public class CollisionHandler {
                         }
                     }
                 } catch (ArrayIndexOutOfBoundsException e) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean checkEntityCollision(Rectangle playerBounds) {
+        for (EntitySprite entitySprite : gp.entity) {
+            if (entitySprite.hasCollision()) {
+                Rectangle entityBounds = entitySprite.getCollisionBounds();
+                if (playerBounds.intersects(entityBounds)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean checkStaticSpriteCollision(Rectangle playerBounds) {
+        for (StaticSprite sprite : gp.staticSprites) {
+            if (sprite.hasCollision()) {
+                Rectangle spriteBounds = sprite.getCollisionBounds();
+                if (playerBounds.intersects(spriteBounds)) {
                     return true;
                 }
             }

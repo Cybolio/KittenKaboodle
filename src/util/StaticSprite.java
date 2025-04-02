@@ -14,7 +14,6 @@ public class StaticSprite {
     private float scaleFactor;
     private GamePanel gp;
     private boolean collision;
-    private int layer;
 
     private double collisionWidth = 10.9;
     private double collisionOffsetX = 0.0;
@@ -33,7 +32,6 @@ public class StaticSprite {
         this.worldY = worldY;
         this.scaleFactor = scaleFactor;
         this.collision = collision;
-        this.layer = layer;
         loadSprite(imagePath);
     }
     public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, int layer, double sizeWidth, double sizeHeight, double offsetX, double offsetY) {
@@ -46,7 +44,6 @@ public class StaticSprite {
         this.worldY = worldY;
         this.scaleFactor = scaleFactor;
         this.collision = collision;
-        this.layer = layer;
         loadSprite(imagePath);
     }
 
@@ -57,8 +54,7 @@ public class StaticSprite {
         this.worldY = worldY;
         this.scaleFactor = scaleFactor;
         this.collision = collision;
-        this.layer = layer;
-        loadSprites(imagePath1, imagePath2);
+
     }
 
     public StaticSprite(GamePanel gamePanel, int i, int i1, String s, String s1, float v, boolean b, int i2, double v1, double v2, double v3, double v4) {
@@ -71,8 +67,7 @@ public class StaticSprite {
         this.worldY = i1;
         this.scaleFactor = v;
         this.collision = b;
-        this.layer = i2;
-        loadSprites(s, s1);
+
     }
 
 
@@ -106,14 +101,6 @@ public class StaticSprite {
         }
     }
 
-    public void loadSprites(String imagePath1, String imagePath2) {
-        try {
-            sprites[0] = ImageIO.read(getClass().getResource(imagePath1));
-            sprites[1] = ImageIO.read(getClass().getResource(imagePath2));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void draw(Graphics2D g2) {
         int screenX = worldX - gp.playerMovement.worldX + gp.playerMovement.screenX;
