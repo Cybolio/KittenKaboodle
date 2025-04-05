@@ -4,6 +4,9 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import java.awt.Rectangle;
+import Main.GamePanel;
+import java.awt.Color;
 
 public class PlayerSprite implements CharacterSpriteManager {
 
@@ -18,7 +21,18 @@ public class PlayerSprite implements CharacterSpriteManager {
     private boolean isMoving;
     private int lastDirection = 0; // Store the last movement direction
 
-    public PlayerSprite(int screenWidth, int screenHeight) {
+
+    PlayerMovement pm = new PlayerMovement();
+    private GamePanel gp;
+
+    public int collisionOffsetX = pm.collisionOffsetX;
+    public int collisionOffsetY = pm.collisionOffsetY;
+    public int collisionWidth = pm.collisionWidth;
+    public int collisionHeight = pm.collisionHeight;
+    public boolean isHitBoxVisible = true;
+
+    public PlayerSprite(GamePanel gp) {
+        this.gp = gp;
         loadSprites();
     }
 
@@ -84,6 +98,28 @@ public class PlayerSprite implements CharacterSpriteManager {
         int scaledHeight = (int) (tileSize * scaleFactor);
 
         g2.drawImage(playerSprites[direction][imageIndex], x, y, scaledWidth, scaledHeight, null);
+
+        if (isHitBoxVisible) {
+            drawHitBox(g2, x, y, tileSize);
+        }
+    }
+
+    private void drawHitBox(Graphics2D g2, int x, int y, int tileSize) {
+        Rectangle hitBox = getCollisionBounds(x, y, tileSize);
+        g2.setColor(Color.RED);
+        g2.drawRect(hitBox.x, hitBox.y, hitBox.width, hitBox.height);
+    }
+
+    public Rectangle getCollisionBounds(int x, int y, int tileSize) {
+        int scaledWidth = (int) (tileSize * 0.8999f);
+        int scaledHeight = (int) (tileSize * 0.8999f);
+
+        return new Rectangle(
+                x + collisionOffsetX,
+                y + collisionOffsetY,
+                collisionWidth,
+                collisionHeight
+        );
     }
 
     public int getDirection() {

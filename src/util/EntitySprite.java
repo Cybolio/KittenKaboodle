@@ -8,28 +8,61 @@ import java.io.IOException;
 
 public class EntitySprite {
     private BufferedImage[] sprites;
-    private int worldX;
-    private int worldY;
+    public int worldX;
+    public int worldY;
     private float scaleFactor;
     private GamePanel gp;
     private boolean collision;
+    private String name;
 
-    private double collisionWidth = 8;
-    private double collisionOffsetX = 0.0;
-    private double collisionHeight = 5.0;
+    private double collisionWidth = 40;
+    private double collisionOffsetX = 0;
+    private double collisionHeight = 7.0;
     private double collisionOffsetY = 20.0;
 
     private int imageIndex = 0;
     private int imageTimer = 0;
-    private final int imageSwitchInterval = 50;
+    private int imageSwitchInterval = 40; // Default animation speed
 
     private int velocityX = 0;
     private int velocityY = 0;
     private String direction;
+    private boolean isMoving = false;
+    private String movementType; // "horizontal" or "vertical"
+    private int travelDistanceX; // Travel distance in X direction
+    private int travelDistanceY; // Travel distance in Y direction
+    private int travelCounterX = 0; // Current travel in X direction
+    private int travelCounterY = 0; // Current travel in Y direction
+
+    private String[] dialogues;
+    private String dialogue;
+
+    public EntitySprite(GamePanel gp){
+
+    }
+    // Constructor for moving entity with direction and travel
+    public EntitySprite(GamePanel gp, String name, int worldX, int worldY, String imagePath1, String imagePath2,
+                        String imagePath3, String imagePath4, float scaleFactor, boolean collision, String movementType, int travelDistanceX, int travelDistanceY) {
+        this.gp = gp;
+        this.name = name;
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.scaleFactor = scaleFactor;
+        this.collision = collision;
+        this.sprites = new BufferedImage[4];
+        loadSprites(imagePath1, imagePath2, imagePath3, imagePath4);
+        this.direction = "down";
+        this.movementType = movementType;
+        this.travelDistanceX = travelDistanceX;
+        this.travelDistanceY = travelDistanceY;
+        startMovement(); // Start the movement immediately
+    }
 
     // Constructor for Idle animation (2 images)
-    public EntitySprite(GamePanel gp, int worldX, int worldY, String imagePath1, String imagePath2, float scaleFactor, boolean collision, int layer) {
+    public EntitySprite(GamePanel gp, String name, int worldX, int worldY, String imagePath1, String imagePath2, float scaleFactor,
+                        boolean collision, double v1, double v2, double v3, double v4, String dialogue) {
         this.gp = gp;
+        this.name = name;
         this.worldX = worldX;
         this.worldY = worldY;
         this.scaleFactor = scaleFactor;
@@ -37,26 +70,32 @@ public class EntitySprite {
         this.sprites = new BufferedImage[2];
         loadSprites(imagePath1, imagePath2);
         this.direction = "idle";
+        collisionWidth = v1;
+        collisionHeight = v2;
+        collisionOffsetX = v3;
+        collisionOffsetY = v4;
+        this.dialogue = dialogue;
     }
-
-    // Constructor for movement animation (4 images)
-    public EntitySprite(GamePanel gp, int worldX, int worldY, String imagePathUp, String imagePathDown, String imagePathLeft, String imagePathRight, float scaleFactor, boolean collision, int layer) {
+    public EntitySprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor,
+                        boolean collision, String dialogue, String name) {
         this.gp = gp;
         this.worldX = worldX;
         this.worldY = worldY;
         this.scaleFactor = scaleFactor;
         this.collision = collision;
-        this.sprites = new BufferedImage[4];
-        loadSprites(imagePathUp, imagePathDown, imagePathLeft, imagePathRight);
-        this.direction = "down";
+        this.sprites = new BufferedImage[2];
+        this.dialogue = dialogue;
+        this.name = name;
+        loadSprites(imagePath,imagePath);
     }
 
     // Constructor for movement animation and custom collision
-    public EntitySprite(GamePanel gamePanel, int i, int i1, String s, String s1, String s2, String s3, float v, boolean b, int i2, double v1, double v2, double v3, double v4) {
+    public EntitySprite(GamePanel gamePanel, String name, int i, int i1, String s, String s1, String s2, String s3, float v, boolean b, int i2, double v1, double v2, double v3, double v4) {
         collisionWidth = v1;
         collisionHeight = v2;
         collisionOffsetX = v3;
         collisionOffsetY = v4;
+        this.name = name;
         this.gp = gamePanel;
         this.worldX = i;
         this.worldY = i1;
@@ -106,18 +145,26 @@ public class EntitySprite {
         if (screenX > -scaledWidth && screenX < gp.getScreenWidth() &&
                 screenY > -scaledHeight && screenY < gp.getScreenHeight()) {
 
-            if (sprites[1] != null) { // If there are two images, animate
+            if (sprites.length == 2 && !isMoving) {
                 imageTimer++;
                 if (imageTimer >= imageSwitchInterval) {
                     imageTimer = 0;
                     imageIndex = (imageIndex + 1) % 2;
                 }
                 g2.drawImage(sprites[imageIndex], screenX, screenY, scaledWidth, scaledHeight, null);
-            } else { // If only one image, just draw it
-                g2.drawImage(sprites[0], screenX, screenY, scaledWidth, scaledHeight, null);
+            } else {
+                g2.drawImage(sprites[imageIndex], screenX, screenY, scaledWidth, scaledHeight, null);
+                if (isMoving) {
+                    imageTimer++;
+                    if (imageTimer > imageSwitchInterval) {
+                        imageTimer = 0;
+                        imageIndex = (imageIndex + 1) % 4;
+                    }
+                }
             }
+
             Boolean isHitBoxVisible = true;
-            if (collision&&isHitBoxVisible) {
+            if (collision && isHitBoxVisible) {
                 Rectangle collisionBox = getCollisionBounds();
                 int collisionScreenX = collisionBox.x - gp.playerMovement.worldX + gp.playerMovement.screenX;
                 int collisionScreenY = collisionBox.y - gp.playerMovement.worldY + gp.playerMovement.screenY;
@@ -128,18 +175,80 @@ public class EntitySprite {
     }
 
     public void updatePosition() {
-        worldX += velocityX;
-        worldY += velocityY;
+        if (isMoving) {
+            // Increment the timer for animation
+            imageTimer++;
+
+            // Switch sprite images based on direction and movement type
+            if (imageTimer >= imageSwitchInterval) {
+                imageTimer = 0; // Reset timer
+
+                if (movementType.equals("horizontal")) {
+                    if (direction.equals("left")) {
+                        imageIndex = (imageIndex == 2) ? 3 : 2; // Left walking sprites
+                    } else if (direction.equals("right")) {
+                        imageIndex = (imageIndex == 0) ? 1 : 0; // Right walking sprites
+                    }
+                } else if (movementType.equals("vertical")) {
+                    if (direction.equals("down")) {
+                        imageIndex = (imageIndex == 0) ? 1 : 0; // Front walking sprites
+                    } else if (direction.equals("up")) {
+                        imageIndex = (imageIndex == 2) ? 3 : 2; // Back walking sprites
+                    }
+                }
+            }
+
+            // Handle movement logic based on type
+            if (movementType.equals("horizontal")) {
+                worldX += velocityX;
+                travelCounterX += Math.abs(velocityX);
+                if (travelCounterX >= travelDistanceX) {
+                    velocityX *= -1; // Reverse direction
+                    travelCounterX = 0;
+                    updateDirectionHorizontal(); // Update direction ("left" or "right")
+                }
+            } else if (movementType.equals("vertical")) {
+                worldY += velocityY;
+                travelCounterY += Math.abs(velocityY);
+                if (travelCounterY >= travelDistanceY) {
+                    velocityY *= -1; // Reverse direction
+                    travelCounterY = 0;
+                    updateDirectionVertical(); // Update direction ("up" or "down")
+                }
+            }
+        }
     }
 
-    public void setVelocityX(int velocityX) {
-        this.velocityX = velocityX;
+    private void adjustImageSwitchInterval() {
+        // Example dynamic scaling based on velocity
+        int effectiveSpeed = Math.max(Math.abs(velocityX), Math.abs(velocityY));
+        imageSwitchInterval = Math.max(20, 20 / effectiveSpeed); // Adjust interval dynamically
     }
 
-    public void setVelocityY(int velocityY) {
-        this.velocityY = velocityY;
+    public String getName() {
+        return name;
+    }
+    public void startMovement() {
+        isMoving = true;
+        if (movementType.equals("horizontal")) {
+            velocityX = 3;
+            updateDirectionHorizontal();
+        } else if (movementType.equals("vertical")) {
+            velocityY = 3;
+            updateDirectionVertical();
+        }
+        adjustImageSwitchInterval(); // Adjust interval when movement starts
     }
 
+    private void updateDirectionHorizontal() {
+        direction = (velocityX > 0) ? "right" : "left";
+    }
+
+    private void updateDirectionVertical() {
+        direction = (velocityY > 0) ? "down" : "up";
+    }
+
+    // getters for velocity
     public int getVelocityX() {
         return velocityX;
     }
@@ -148,30 +257,11 @@ public class EntitySprite {
         return velocityY;
     }
 
-    public void setDirection(String direction) {
-        this.direction = direction;
-        updateImageIndex();
+    public String getDialogue() {
+        return dialogue;
     }
 
-    private void updateImageIndex() {
-        if (sprites.length == 4) {
-            switch (direction) {
-                case "up":
-                    imageIndex = 0;
-                    break;
-                case "down":
-                    imageIndex = 1;
-                    break;
-                case "left":
-                    imageIndex = 2;
-                    break;
-                case "right":
-                    imageIndex = 3;
-                    break;
-                default:
-                    imageIndex = 1; // Default to down if direction is unknown
-                    break;
-            }
-        }
+    public boolean hasDialogue() {
+        return dialogue != null && !dialogue.isEmpty();
     }
 }

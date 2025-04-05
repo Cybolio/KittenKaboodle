@@ -24,9 +24,12 @@ public class StaticSprite {
     private int imageIndex = 0;
     private int imageTimer = 0;
     private final int imageSwitchInterval = 50; // Adjust for idle animation speed
+    private String dialogue;
+
+    private String name;
 
     // Constructor for single image
-    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, int layer) {
+    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision) {
         this.gp = gp;
         this.worldX = worldX;
         this.worldY = worldY;
@@ -34,7 +37,8 @@ public class StaticSprite {
         this.collision = collision;
         loadSprite(imagePath);
     }
-    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, int layer, double sizeWidth, double sizeHeight, double offsetX, double offsetY) {
+
+    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, double sizeWidth, double sizeHeight, double offsetX, double offsetY) {
         collisionWidth = sizeWidth;
         collisionHeight = sizeHeight;
         collisionOffsetX = offsetX;
@@ -47,16 +51,6 @@ public class StaticSprite {
         loadSprite(imagePath);
     }
 
-    // Overloaded constructor for animated sprites (idle animation)
-    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath1, String imagePath2, float scaleFactor, boolean collision, int layer) {
-        this.gp = gp;
-        this.worldX = worldX;
-        this.worldY = worldY;
-        this.scaleFactor = scaleFactor;
-        this.collision = collision;
-
-    }
-
     public StaticSprite(GamePanel gamePanel, int i, int i1, String s, String s1, float v, boolean b, int i2, double v1, double v2, double v3, double v4) {
         collisionWidth = v1;
         collisionHeight = v2;
@@ -67,16 +61,66 @@ public class StaticSprite {
         this.worldY = i1;
         this.scaleFactor = v;
         this.collision = b;
+    }
+
+    // Constructor with dialogue
+    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, String dialogue) {
+        this.gp = gp;
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.scaleFactor = scaleFactor;
+        this.collision = collision;
+        loadSprite(imagePath);
+        this.dialogue = dialogue;
+    }
+
+    // Constructor with dialogue and custom collision
+    public StaticSprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor, boolean collision, double sizeWidth, double sizeHeight, double offsetX, double offsetY, String dialogue) {
+        collisionWidth = sizeWidth;
+        collisionHeight = sizeHeight;
+        collisionOffsetX = offsetX;
+        collisionOffsetY = offsetY;
+        this.gp = gp;
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.scaleFactor = scaleFactor;
+        this.collision = collision;
+        loadSprite(imagePath);
+        this.dialogue = dialogue;
+    }
+
+    public StaticSprite(GamePanel gp,int worldX, int worldY, String img, float scaleFactor,
+            Boolean collision, double sizeWidth, double sizeHeight, double offsetX, double offsetY, String name, String dialogue){
+
+        collisionWidth = sizeWidth;
+        collisionHeight = sizeHeight;
+        collisionOffsetX = offsetX;
+        collisionOffsetY = offsetY;
+        this.gp = gp;
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.scaleFactor = scaleFactor;
+        this.collision = collision;
+        loadSprite(img);
+        this.dialogue = dialogue;
 
     }
 
+    public String getDialogue() {
+        return dialogue;
+    }
 
+    public boolean hasDialogue() {
+        return dialogue != null && !dialogue.isEmpty();
+    }
 
     public boolean hasCollision() {
         return collision;
     }
 
-
+    public String getName() {
+        return name;
+    }
 
     public Rectangle getCollisionBounds() {
         int scaledWidth = (int) (gp.getTileSize() * scaleFactor);
@@ -101,7 +145,6 @@ public class StaticSprite {
         }
     }
 
-
     public void draw(Graphics2D g2) {
         int screenX = worldX - gp.playerMovement.worldX + gp.playerMovement.screenX;
         int screenY = worldY - gp.playerMovement.worldY + gp.playerMovement.screenY;
@@ -123,7 +166,7 @@ public class StaticSprite {
                 g2.drawImage(sprites[0], screenX, screenY, scaledWidth, scaledHeight, null);
             }
             Boolean isHitBoxVisible = true;
-            if (collision&&isHitBoxVisible) {
+            if (collision && isHitBoxVisible) {
                 Rectangle collisionBox = getCollisionBounds();
                 int collisionScreenX = collisionBox.x - gp.playerMovement.worldX + gp.playerMovement.screenX;
                 int collisionScreenY = collisionBox.y - gp.playerMovement.worldY + gp.playerMovement.screenY;

@@ -12,7 +12,7 @@ public class SoundManager {
     private int currentMusicIndex = 0;
 
     // Volume control properties
-    private float musicVolume = 0.4f; // Default full volume (range: 0.0f to 1.0f)
+    private float musicVolume = 0.188f; // Default full volume (range: 0.0f to 1.0f)
     private float effectVolume = 1.0f; // Default full volume
 
     // Debug flag
@@ -30,9 +30,9 @@ public class SoundManager {
         }
 
         // Initialize multiple music resources
-        musicURL[0] = getClass().getResource("/sounds/music/condensedMilk.wav");
-        musicURL[1] = getClass().getResource("/sounds/music/shop.wav");
-        musicURL[2] = getClass().getResource("/sounds/music/snowden.wav");
+        musicURL[0] = getClass().getResource("/sounds/music/shop.wav");
+        musicURL[1] = getClass().getResource("/sounds/music/snowden.wav");
+        musicURL[2] = getClass().getResource("/sounds/music/shop.wav");
 
         // Log success/failure for each music file
         for (int i = 0; i < 3; i++) {

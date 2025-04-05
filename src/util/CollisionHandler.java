@@ -5,6 +5,7 @@ import tiles.Tile;
 import tiles.TileManager;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 public class CollisionHandler {
 
@@ -30,7 +31,7 @@ public class CollisionHandler {
         for (int row = entityTopRow; row <= entityBottomRow; row++) {
             for (int col = entityLeftCol; col <= entityRightCol; col++) {
                 try {
-                    int tileNum = map[col][row]; // Corrected row and column access
+                    int tileNum = map[col][row];
                     Tile[] tiles = tileManager.getTile();
 
                     if (tiles != null && tiles.length > tileNum && tiles[tileNum] != null && tiles[tileNum].collision) {
@@ -39,8 +40,7 @@ public class CollisionHandler {
                         int tileTop = row * gp.getTileSize();
                         int tileBottom = tileTop + gp.getTileSize();
 
-                        // Adjust collision area to be smaller
-                        int collisionPadding = gp.getTileSize() / 8; // Reduced padding
+                        int collisionPadding = gp.getTileSize() / 4;
                         tileLeft += collisionPadding;
                         tileRight -= collisionPadding;
                         tileTop += collisionPadding;
@@ -60,7 +60,7 @@ public class CollisionHandler {
     }
 
     public boolean checkEntityCollision(Rectangle playerBounds) {
-        for (EntitySprite entitySprite : gp.entity) {
+        for (EntitySprite entitySprite : gp.spriteManager.entity) {
             if (entitySprite.hasCollision()) {
                 Rectangle entityBounds = entitySprite.getCollisionBounds();
                 if (playerBounds.intersects(entityBounds)) {
@@ -72,7 +72,7 @@ public class CollisionHandler {
     }
 
     public boolean checkStaticSpriteCollision(Rectangle playerBounds) {
-        for (StaticSprite sprite : gp.staticSprites) {
+        for (StaticSprite sprite : gp.spriteManager.staticSprites) {
             if (sprite.hasCollision()) {
                 Rectangle spriteBounds = sprite.getCollisionBounds();
                 if (playerBounds.intersects(spriteBounds)) {
