@@ -1,0 +1,47 @@
+package Main;
+
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JPanel;
+
+import tiles.TileManager;
+import util.*;
+
+public class GamePanel extends JPanel implements Runnable {
+    // ... (rest of your GamePanel code) ...
+
+    public GamePanel() {
+        // ... (rest of your constructor) ...
+        initMouseListener(); // Initialize the mouse listener
+    }
+
+    public void initMouseListener() {
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (gameState == combatState) {
+                    combatManager.handleMouseClick(e.getX(), e.getY());
+                }
+            }
+        });
+    }
+
+    // ... (rest of your GamePanel code) ...
+
+    public void checkDialogueTrigger() {
+        // ... (your existing dialogue trigger logic) ...
+
+        // Shop Menu Click Handling:
+        if (shopManager.showShopMenu && mouseHandler.isLeftMousePressed()) {
+            for (int i = 0; i < shopManager.shopButtons.size(); i++) {
+                if (shopManager.shopButtons.get(i).contains(mouseHandler.getMouseX(), mouseHandler.getMouseY())) {
+                    // ... (your shop button click logic) ...
+                }
+            }
+            mouseHandler.leftMousePressed = false;
+        }
+
+        // ... (rest of your dialogue trigger logic) ...
+    }
+}

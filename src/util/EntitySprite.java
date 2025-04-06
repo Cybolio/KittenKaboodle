@@ -7,7 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 public class EntitySprite {
-    private BufferedImage[] sprites;
+    BufferedImage[] sprites;
     public int worldX;
     public int worldY;
     private float scaleFactor;
@@ -33,7 +33,7 @@ public class EntitySprite {
     private int travelDistanceY; // Travel distance in Y direction
     private int travelCounterX = 0; // Current travel in X direction
     private int travelCounterY = 0; // Current travel in Y direction
-
+    private Boolean isBeat = false;
     private String[] dialogues;
     private String dialogue;
 
@@ -133,6 +133,13 @@ public class EntitySprite {
                 e.printStackTrace();
             }
         }
+    }
+
+    public Boolean getIsBeat(){
+        return isBeat;
+    }
+    public void setIsBeat(Boolean isBeat){
+        this.isBeat = isBeat;
     }
 
     public void draw(Graphics2D g2) {

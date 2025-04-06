@@ -2,6 +2,7 @@ package util;
 
 import Main.GamePanel;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,28 @@ public class PlayerMovement {
     public int collisionOffsetY = 16;
     public int collisionWidth = 40;
     public int collisionHeight = 50;
+    public BufferedImage[] sprites;
+
+    private float scaleFactor;
+
+    private boolean collision;
+    private String name;
+
+
+    private int imageIndex = 0;
+    private int imageTimer = 0;
+    private int imageSwitchInterval = 40; // Default animation speed
+
+    private int velocityX = 0;
+    private int velocityY = 0;
+    private String movementType; // "horizontal" or "vertical"
+    private int travelDistanceX; // Travel distance in X direction
+    private int travelDistanceY; // Travel distance in Y direction
+    private int travelCounterX = 0; // Current travel in X direction
+    private int travelCounterY = 0; // Current travel in Y direction
+
+    private String[] dialogues;
+    private String dialogue;
 
     private final String LOG_FILE = "GameLogs/logs.txt";
 
@@ -38,6 +61,12 @@ public class PlayerMovement {
         worldX += 2000;
         worldY -= 0;
         clearLogFile();
+    }
+
+    public Rectangle getPlayerCollisionBounds() {
+        // Create a collision box around the player for combat detection
+        int collisionBoxSize = gp.getTileSize() - 20; // Slightly smaller than player tile
+        return new Rectangle(worldX + 10, worldY + 10, collisionBoxSize, collisionBoxSize);
     }
 
     public PlayerMovement() {
@@ -58,6 +87,20 @@ public class PlayerMovement {
         } catch (IOException e) {
             System.err.println("Error clearing log file: " + e.getMessage());
         }
+    }
+
+    public BufferedImage getImage1() {
+        if (sprites != null && sprites.length > 0) {
+            return sprites[0];
+        }
+        return null;
+    }
+
+    public BufferedImage getCurrentImage() {
+        if (sprites != null && sprites.length > imageIndex) {
+            return sprites[imageIndex];
+        }
+        return null;
     }
 
     public boolean isPlayerBound() {

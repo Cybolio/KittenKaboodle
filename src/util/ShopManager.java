@@ -19,12 +19,12 @@ public class ShopManager {
 
     private void setupShopMenu() {
         shopMenuRect = new Rectangle(100, 100, gp.getScreenWidth() - 200, gp.getScreenHeight() - 200);
-        shopItems.add("Potion (10 gold)");
-        shopItems.add("Sword (50 gold)");
-        shopItems.add("Armor (80 gold)");
+        shopItems.add("Healing Juice (10 gold)");
+        shopItems.add("Catnip (50 gold)");
+        shopItems.add("Smoke Bomb (80 gold)");
         shopItems.add("Exit");
 
-        int buttonWidth = 200;
+        int buttonWidth = 500;
         int buttonHeight = 50;
         int buttonSpacing = 20;
         int startX = shopMenuRect.x + 50;
@@ -36,6 +36,7 @@ public class ShopManager {
     }
 
     public void drawShopMenu(Graphics2D g2) {
+        gp.logToGameLog("Shop Menu opened");
         g2.setColor(new Color(0, 0, 0, 200));
         g2.fill(shopMenuRect);
 

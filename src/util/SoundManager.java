@@ -31,7 +31,7 @@ public class SoundManager {
 
         // Initialize multiple music resources
         musicURL[0] = getClass().getResource("/sounds/music/shop.wav");
-        musicURL[1] = getClass().getResource("/sounds/music/snowden.wav");
+        musicURL[1] = getClass().getResource("/sounds/music/shop.wav");
         musicURL[2] = getClass().getResource("/sounds/music/shop.wav");
 
         // Log success/failure for each music file

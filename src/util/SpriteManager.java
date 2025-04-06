@@ -21,23 +21,26 @@ public class SpriteManager {
         // Buildings
         staticSprites.add(new StaticSprite(
                 gp,
-                (tileSize * 10) + 150, (tileSize * 10) - 30,
+                (tileSize * 10) + 150, (tileSize * 10) - 70,
                 "/tiles/Buildings/House5.png",
-                4.0f, true
+                4.0f, true,12, 3, 0.0, 75,
+                "RIZZLY's Home", "RIZZLY's home"
         ));
 
         staticSprites.add(new StaticSprite(
                 gp,
-                (tileSize * 10) - 420, (tileSize * 10) - 30,
+                (tileSize * 10) - 420, (tileSize * 10) - 70,
                 "/tiles/Buildings/House2.png",
-                4.0f, true
+                4.0f, true, 12, 3, 0.0, 75,
+                "Neighbor's Home", "Neighbor's home"
         ));
 
         staticSprites.add(new StaticSprite(
                 gp,
                 (tileSize * 10) + 150, (tileSize * 10) + 500,
                 "/tiles/Buildings/House1.png",
-                4.0f, true
+                4.0f, true, 12, 3, 0.0, 75,
+                "Your Home", "Your home"
         ));
 
         staticSprites.add(new StaticSprite(
@@ -97,17 +100,17 @@ public class SpriteManager {
         // NPCs
 
         entity.add(new EntitySprite(
-                gp, "Grizzer",
+                gp, "Rizzly",
                 (tileSize * 20) - 300, (tileSize * 20) - 440,
                 "/entity/npc/Rizzly1.png", "/entity/npc/Rizzly2.png",
-                1f, true, 35, 45, 0.0, 0, "RIZZLY: *Yawn* So tired..."
+                1f, true, 35, 15, 0.0, 0, "RIZZLY: *Yawn* So tired..."
         ));
 
         Panda panda = new Panda(gp);
         entity.add(panda);
 
         entity.add(new EntitySprite(
-                gp, "Cop0",
+                gp, "cop0",
                 (tileSize * 20) + 325, (tileSize * 20),
                 "/entity/npc/enemy/cop/copFwalk1.png", "/entity/npc/enemy/cop/copFwalk2.png",
                 "/entity/npc/enemy/cop/copBwalk1.png", "/entity/npc/enemy/cop/copBwalk2.png",
@@ -115,7 +118,7 @@ public class SpriteManager {
         ));
 
         entity.add(new EntitySprite(
-                gp, "Cop1",
+                gp, "cop1",
                 (tileSize * 40) + 325, (tileSize * 1),
                 "/entity/npc/enemy/cop/copRwalk1.png", "/entity/npc/enemy/cop/copRwalk2.png",
                 "/entity/npc/enemy/cop/copLwalk1.png", "/entity/npc/enemy/cop/copLwalk2.png",
