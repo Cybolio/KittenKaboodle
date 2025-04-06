@@ -1,13 +1,20 @@
 package util;
 
 import Main.GamePanel;
+
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import javax.imageio.ImageIO;
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Random;
+import java.util.Iterator;
 
-public class TurnBasedCombatManager {
+public class GameLoopManager {
     private GamePanel gp;
     public boolean combatActive = false;
     public EntitySprite currentEnemy = null;
@@ -19,7 +26,7 @@ public class TurnBasedCombatManager {
     public final int COMBAT_RESULT = 3;
     public int combatState = COMBAT_INTRO;
     private boolean isHealing = false;
-    private int playerHealth = 100;
+    public int playerHealth = 100;
     private int playerMaxHealth = 100;
     private int playerAttack = 25;
     private int playerDefense = 5;
@@ -28,7 +35,6 @@ public class TurnBasedCombatManager {
     private int enemyMaxHealth = 80;
     private int enemyAttack = 10;
     private int enemyDefense = 3;
-
     private Rectangle attackButton;
     private Rectangle defendButton;
     private Rectangle itemButton;
@@ -42,12 +48,15 @@ public class TurnBasedCombatManager {
     private int damageValue = 0;
     private int damageX, damageY;
     private boolean isPlayerDamaged = false;
-
+    private boolean isGameOver = false;
     private BufferedImage combatBackground;
 
     private Random random = new Random();
+    private final String LOG_FILE = "GameLogs/collision_log.txt";
+    private int frameCounter = 0;
+    private final int COLLISION_CHECK_INTERVAL = 15;
 
-    public TurnBasedCombatManager(GamePanel gp) {
+    public GameLoopManager(GamePanel gp) {
         this.gp = gp;
         this.playerSprite = new PlayerSprite(gp);
 
@@ -62,33 +71,35 @@ public class TurnBasedCombatManager {
         fleeButton = new Rectangle(startX + buttonWidth + 20, startY + buttonHeight + 10, buttonWidth, buttonHeight);
 
         try {
-            combatBackground = ImageIO.read(getClass().getResourceAsStream("/tiles/Background/CombatBackground.png"));
+            combatBackground = ImageIO.read(getClass().getResourceAsStream("/tiles/background/CombatBackground.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    EntitySprite enemy;
 
+    public void setPlayerMaxHealth(int playerMaxHealth) {
+        this.playerMaxHealth = playerMaxHealth;
+    }
+
+    public int getPlayerMaxHealth() {
+        return playerMaxHealth;
+    }
+    EntitySprite enemy;
     public void startCombat(EntitySprite enemy) {
-        this.enemy =enemy;
+        this.enemy = enemy;
         combatActive = true;
         currentEnemy = enemy;
         combatState = COMBAT_INTRO;
         combatMessage = "A wild " + enemy.getName() + " appeared!";
         messageDuration = 120;
         gp.logToGameLog("Turn-based combat started with " + enemy.getName());
-        playerHealth = playerMaxHealth;
+        //playerHealth = playerMaxHealth;
 
         if (enemy.getName().startsWith("cop")) {
             enemyHealth = 50;
-            enemyMaxHealth = 80;
+            enemyMaxHealth = 50;
             enemyAttack = 12;
             enemyDefense = 8;
-        } else if (enemy.getName().equals("Grizzer")) {
-            enemyHealth = 100;
-            enemyMaxHealth = 100;
-            enemyAttack = 15;
-            enemyDefense = 5;
         }
 
         gp.playerMovement.setPlayerCanMove(false);
@@ -100,10 +111,13 @@ public class TurnBasedCombatManager {
         if (playerWon) {
             combatMessage = "player won the battle!";
             gp.logToGameLog(combatMessage + " against " + enemy.getName());
+            gp.setScore(gp.score += 250);
+            gp.enemiesBeat++;
         } else {
             combatMessage = "player lost the battle!";
             gp.logToGameLog(combatMessage + " against " + enemy.getName());
-            playerHealth = playerMaxHealth;
+            //playerHealth = playerMaxHealth;
+            isGameOver = true;
         }
 
         messageDuration = 120;
@@ -115,7 +129,10 @@ public class TurnBasedCombatManager {
                 combatActive = false;
                 gp.playerMovement.setPlayerCanMove(true);
                 gp.gameState = gp.playState;
+                System.out.println("endCombat: Game state set to gp.playState");
                 gp.gameTimer.resumeTimer();
+                isGameOver = false;
+                System.out.println("endCombat: combatActive set to false");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -123,7 +140,15 @@ public class TurnBasedCombatManager {
     }
 
     public void update() {
-        if (!combatActive) return;
+        frameCounter++;
+        if (frameCounter >= COLLISION_CHECK_INTERVAL) {
+            frameCounter = 0;
+            checkCombatCollision();
+        }
+
+        if (!combatActive) {
+            return;
+        }
 
         if (messageDuration > 0) {
             messageDuration--;
@@ -197,11 +222,23 @@ public class TurnBasedCombatManager {
     }
 
     private void playerItemAction() {
-        int healAmount = 10 + random.nextInt(4);
-        playerHealth += healAmount;
-        playerHealth = Math.min(playerMaxHealth, playerHealth);
+        if (gp.healingJuice > 0 && playerHealth < playerMaxHealth) {
+            int healAmount = 10 + random.nextInt(4);
+            gp.healingJuice--;
+            playerHealth += healAmount;
+            playerHealth = Math.min(playerMaxHealth, playerHealth);
+            combatMessage = "You used a healing juice and recovered " + healAmount + " health!";
 
-        combatMessage = "You used a healing item and recovered " + healAmount + " health!";
+        } else {
+            if (gp.healingJuice < 1) {
+                combatMessage = "You are out of healing juice";
+                return;
+            }
+            if (playerHealth == playerMaxHealth) {
+                combatMessage = "You are at full health";
+                return;
+            }
+        }
         combatState = ENEMY_TURN;
         enemyAction();
     }
@@ -250,7 +287,7 @@ public class TurnBasedCombatManager {
         } else if (action == 1) {
             enemyDefense += 5;
             combatMessage = currentEnemy.getName() + " is guarding!";
-            messageDuration = 60;  // Give player feedback before transition
+            messageDuration = 60;
             combatState = PLAYER_TURN;
         } else {
             int healAmount = 15 + random.nextInt(5);
@@ -310,7 +347,7 @@ public class TurnBasedCombatManager {
     private void drawHealthBar(Graphics2D g2, int x, int y, int currentHealth, int maxHealth, Color color) {
         int barWidth = 100;
         int barHeight = 10;
-        int filledWidth = (int)((double)currentHealth / maxHealth * barWidth);
+        int filledWidth = (int) ((double) currentHealth / maxHealth * barWidth);
 
         g2.setColor(Color.DARK_GRAY);
         g2.fillRect(x, y, barWidth, barHeight);
@@ -349,7 +386,7 @@ public class TurnBasedCombatManager {
     private void drawActionButtons(Graphics2D g2) {
         drawButton(g2, attackButton, "Attack", Color.RED);
         drawButton(g2, defendButton, "Defend", Color.BLUE);
-        drawButton(g2, itemButton, "Item", Color.GREEN);
+        drawButton(g2, itemButton, "Heal x" + gp.healingJuice, Color.GREEN);
         drawButton(g2, fleeButton, "Flee", Color.ORANGE);
     }
 
@@ -373,7 +410,7 @@ public class TurnBasedCombatManager {
 
     private void drawDamageAnimation(Graphics2D g2) {
         g2.setFont(new Font("Arial", Font.BOLD, 24));
-        int offsetY = (int)(Math.sin(animationCounter * 0.1) * 10);
+        int offsetY = (int) (Math.sin(animationCounter * 0.1) * 10);
 
         g2.setColor(Color.BLACK);
         String displayText = (isHealing ? "+" : "-") + damageValue;
@@ -388,24 +425,184 @@ public class TurnBasedCombatManager {
         g2.drawString(displayText, damageX, damageY + offsetY);
     }
 
-
     public void checkCombatCollision() {
-        if (combatActive) return;
+        if (combatActive) {
+            System.out.println("checkCombatCollision: Combat active. Returning.");
+            return;
+        }
 
         Rectangle playerRect = gp.playerMovement.getPlayerCollisionBounds();
 
-        for (EntitySprite entity : gp.spriteManager.entity) {
-            if (entity.getName().startsWith("cop") || entity.getName().equals("Grizzer")) {
-                Rectangle entityRect = entity.getCollisionBounds();
-                entityRect.grow(10, 10);
+        Iterator<EntitySprite> iterator = gp.spriteManager.entity.iterator();
+        while (iterator.hasNext()) {
+            EntitySprite entity = iterator.next();
+            Rectangle entityRect = entity.getCollisionBounds();
+            entityRect.grow(10, 10);
 
-                if (playerRect.intersects(entityRect)) {
-                    if (new Random().nextInt(100) < 25) {
+            if (playerRect.intersects(entityRect)) {
+                logCollision(entity.getName());
+                if (entity.getName().startsWith("cop")) {
+                    System.out.println("Cop collision detected!");
+                    System.out.println("Player Rect: " + playerRect);
+                    System.out.println("Cop Rect: " + entityRect);
+
+                    int randomNumber = new Random().nextInt(100);
+                    System.out.println("Random number: " + randomNumber);
+
+                    if (randomNumber < 5) {
+                        System.out.println("Starting combat!");
                         startCombat(entity);
                         break;
+                    } else {
+                        System.out.println("Combat Avoided.");
                     }
+                } else if (entity.getName().startsWith("Cat")) {
+                    gp.setScore(gp.getScore() + 250);
+                    gp.catsCollected++;
+                    iterator.remove();
+                    gp.logToGameLog("Cat entity removed. Score increased by 250.");
+                    break;
+                } else if (entity.getName().startsWith("Your Home")) {
+                    System.out.println("checkCombatCollision: Your Home collision detected (post-combat)!");
+                    gp.setMinimumSize(new Dimension(gp.getScreenWidth(), gp.getScreenHeight()));
+                    gp.endGameTriggered = true;
+                    gp.playerMovement.setPlayerCanMove(false);
+                    gp.gameTimer.pauseTimer();
+                    long totalGameTime = System.currentTimeMillis() - gp.gameTimer.getElapsedTime();
+
+                    EndGameFrame.showEndGameFrame(gp, totalGameTime);
+
+                    gp.gameState = gp.gameOverState;
+
+                    break;
                 }
             }
         }
+    }
+
+    public boolean isPlayerDefeated() {
+        return isGameOver;
+    }
+
+    // Leaderboard Methods
+    public void recordLeaderboardEntry(String playerName, long gameTime) {
+        System.out.println("recordLeaderboardEntry called with: " + playerName + ", " + gameTime);
+        ArrayList<LeaderboardEntry> leaderboard = loadLeaderboard();
+        LeaderboardEntry newEntry = new LeaderboardEntry(playerName, gp.score, gameTime);
+
+        leaderboard.add(newEntry);
+        Collections.sort(leaderboard, Comparator.comparingInt(LeaderboardEntry::getScore).reversed()
+                .thenComparingLong(LeaderboardEntry::getGameTime));
+
+        if (leaderboard.size() > 5) {
+            leaderboard = new ArrayList<>(leaderboard.subList(0, 5));
+        }
+
+        saveLeaderboard(leaderboard);
+    }
+
+    public ArrayList<LeaderboardEntry> loadLeaderboard() {
+        ArrayList<LeaderboardEntry> leaderboard = new ArrayList<>();
+        File file = new File("GameLogs/leaderboard.txt");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 3) {
+                    leaderboard.add(new LeaderboardEntry(parts[0], Integer.parseInt(parts[1]), Long.parseLong(parts[2])));
+                }
+            }
+        } catch (IOException | NumberFormatException e) {
+            System.err.println("Error loading leaderboard: " + e.getMessage());
+        }
+        return leaderboard;
+    }
+
+    private void saveLeaderboard(ArrayList<LeaderboardEntry> leaderboard) {
+        File file = new File("GameLogs/leaderboard.txt");
+        System.out.println("Saving leaderboard to: " + file.getAbsolutePath());
+        try (PrintWriter writer = new PrintWriter(file)) {
+            for (LeaderboardEntry entry : leaderboard) {
+                writer.println(entry.getPlayerName() + "," + entry.getScore() + "," + entry.getGameTime());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static class LeaderboardEntry {
+        private String playerName;
+        private int score;
+        private long gameTime;
+
+        public LeaderboardEntry(String playerName, int score, long gameTime) {
+            this.playerName = playerName;
+            this.score = score;
+            this.gameTime = gameTime;
+        }
+
+        public String getPlayerName() {
+            return playerName;
+        }
+
+        public int getScore() {
+            return score;
+        }
+
+        public long getGameTime() {
+            return gameTime;
+        }
+    }
+
+    private void logCollision(String npcName) {
+        String projectRoot = System.getProperty("user.dir");
+        String logFilePath = projectRoot + File.separator + LOG_FILE;
+        File logFile = new File(logFilePath);
+
+        try {
+            if (!logFile.getParentFile().exists()) {
+                logFile.getParentFile().mkdirs();
+            }
+
+            if (!logFile.exists()) {
+                logFile.createNewFile();
+            }
+
+            if (!isDuplicateLog(logFile, npcName)) {
+                try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logFile, true)))) {
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    String formattedDateTime = now.format(formatter);
+                    out.println(formattedDateTime + " - Collision Detected with: " + npcName);
+
+                } catch (IOException e) {
+                    System.out.println("Error writing to log file: " + e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error creating log file or directories: " + e.getMessage());
+        }
+    }
+
+    private boolean isDuplicateLog(File logFile, String npcName) throws IOException {
+        if (!logFile.exists()) {
+            return false;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
+            String lastLine = null;
+            String currentLine;
+
+            while ((currentLine = reader.readLine()) != null) {
+                lastLine = currentLine;
+            }
+
+            if (lastLine != null && lastLine.contains(" - Collision Detected with: " + npcName)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

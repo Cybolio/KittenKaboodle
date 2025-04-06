@@ -22,8 +22,9 @@ public class PlayerMovement {
     public int collisionOffsetX = 14;
     public int collisionOffsetY = 16;
     public int collisionWidth = 40;
-    public int collisionHeight = 50;
+    public int collisionHeight = 40;
     public BufferedImage[] sprites;
+    public boolean canMove = true;
 
     private float scaleFactor;
 
@@ -49,19 +50,27 @@ public class PlayerMovement {
     private final String LOG_FILE = "GameLogs/logs.txt";
 
     private boolean playerCanMove = true; // Added this line
-
+    public int worldXOriginal;
+    public int worldYOriginal;
     public PlayerMovement(GamePanel gp) {
         this.gp = gp;
         this.playerWidth = gp.getTileSize();
         this.playerHeight = gp.getTileSize();
         this.worldX = gp.getTileSize() * gp.maxWorldRow / 4 - gp.getScreenWidth() / 2;
         this.worldY = gp.getTileSize() * gp.maxWorldCol / 4 - gp.getScreenHeight() / 2;
+
         this.screenX = gp.getScreenWidth() / 2 - gp.getTileSize() / 2;
         this.screenY = gp.getScreenHeight() / 2 - gp.getTileSize() / 2;
         worldX += 2000;
         worldY -= 0;
+        worldXOriginal=worldX+30;
+        worldYOriginal=worldY;
         clearLogFile();
     }
+
+
+    private int screenXOriginal;
+    private int screenYOriginal;
 
     public Rectangle getPlayerCollisionBounds() {
         // Create a collision box around the player for combat detection
@@ -149,7 +158,10 @@ public class PlayerMovement {
                 Rectangle npcBounds = npc.getCollisionBounds();
                 if (playerBounds.intersects(npcBounds)) {
                     logCollision(npc.getName());
-                    System.out.println("Collision Detected with " + npc.getName());
+
+
+
+                    //System.out.println("Collision Detected with " + npc.getName());
                     isDetected=true;
                     collisionDetected = true;
                     collidingNPC = npc;
@@ -190,7 +202,9 @@ public class PlayerMovement {
                 }
             }
         } else if (!gp.getCollisionHandler().checkCollision(nextWorldX, nextWorldY, playerWidth, playerHeight, gp.getMapTileNum()) &&
+                !gp.checkEntitySpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight) &&
                 !gp.checkStaticSpriteCollision(nextWorldX, nextWorldY, playerWidth, playerHeight)) {
+
             worldX = nextWorldX;
             worldY = nextWorldY;
         }
@@ -271,6 +285,7 @@ public class PlayerMovement {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                     String formattedDateTime = now.format(formatter);
                     out.println(formattedDateTime + " - Collision Detected with: " + npcName);
+
                 } catch (IOException e) {
                     System.out.println("Error writing to log file: " + e.getMessage());
                 }
@@ -299,6 +314,11 @@ public class PlayerMovement {
             }
         }
         return false;
+    }
+
+    public void resetPlayerPosition() {
+        worldX = worldXOriginal;
+        worldY = worldYOriginal;
     }
 
     public void setPlayerCanMove(boolean canMove) {

@@ -34,15 +34,12 @@ public class EntitySprite {
     private int travelCounterX = 0; // Current travel in X direction
     private int travelCounterY = 0; // Current travel in Y direction
     private Boolean isBeat = false;
-    private String[] dialogues;
     private String dialogue;
+    boolean isEnemy = false;
 
-    public EntitySprite(GamePanel gp){
-
-    }
     // Constructor for moving entity with direction and travel
     public EntitySprite(GamePanel gp, String name, int worldX, int worldY, String imagePath1, String imagePath2,
-                        String imagePath3, String imagePath4, float scaleFactor, boolean collision, String movementType, int travelDistanceX, int travelDistanceY) {
+                        String imagePath3, String imagePath4, float scaleFactor, boolean collision, String movementType, int travelDistanceX, int travelDistanceY, boolean isEnemy) {
         this.gp = gp;
         this.name = name;
         this.worldX = worldX;
@@ -55,6 +52,7 @@ public class EntitySprite {
         this.movementType = movementType;
         this.travelDistanceX = travelDistanceX;
         this.travelDistanceY = travelDistanceY;
+        this.isEnemy =isEnemy;
         startMovement(); // Start the movement immediately
     }
 
@@ -75,6 +73,7 @@ public class EntitySprite {
         collisionOffsetX = v3;
         collisionOffsetY = v4;
         this.dialogue = dialogue;
+        isEnemy=false;
     }
     public EntitySprite(GamePanel gp, int worldX, int worldY, String imagePath, float scaleFactor,
                         boolean collision, String dialogue, String name) {
@@ -87,6 +86,7 @@ public class EntitySprite {
         this.dialogue = dialogue;
         this.name = name;
         loadSprites(imagePath,imagePath);
+        isEnemy=false;
     }
 
     // Constructor for movement animation and custom collision
@@ -104,6 +104,7 @@ public class EntitySprite {
         this.sprites = new BufferedImage[4];
         loadSprites(s, s1, s2, s3);
         this.direction = "down";
+        isEnemy=false;
     }
 
     public boolean hasCollision() {
@@ -140,6 +141,10 @@ public class EntitySprite {
     }
     public void setIsBeat(Boolean isBeat){
         this.isBeat = isBeat;
+    }
+
+    public boolean getIsEnemy() {
+        return this.isEnemy;
     }
 
     public void draw(Graphics2D g2) {

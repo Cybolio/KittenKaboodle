@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 import tiles.TileManager;
 import util.*;
+import java.util.Random;
 
 public class GamePanel extends JPanel implements Runnable {
     private final int tileSize = 72;
@@ -25,6 +26,14 @@ public class GamePanel extends JPanel implements Runnable {
     public PlayerMovement playerMovement;
     private CollisionHandler collisionHandler;
 
+    // LEADERBOARD VARIABLES
+    public int score = 100; // Starting score
+    public int enemiesBeat = 0;
+    public int catsCollected = 0;
+    public int itemsBought = 0;
+    public boolean endGameTriggered = false;
+    public long startTime;
+
     private final SoundManager soundmgr = new SoundManager();
     private final TileManager tiles;
 
@@ -35,20 +44,29 @@ public class GamePanel extends JPanel implements Runnable {
     public final int pauseState = 2;
     public final int dialogueState = 3;
     public final int combatState = 4;
+    public final int gameOverState = 5; // New game over state
+    public final int mapChangeDialogueState = 6;
 
     public DialogueManager dialogueManager;
     public ShopManager shopManager;
     public GameTimer gameTimer;
     public SpriteManager spriteManager;
-    public TurnBasedCombatManager combatManager;
+    public GameLoopManager combatManager;
 
     private MouseHandler mouseHandler;
     private final String LOG_FILE = "GameLogs/logs.txt";
-
+    public int healingJuice = 1;
     // Main menu variables
     private BufferedImage mainMenuBackground;
     private Rectangle startButton;
     private Rectangle exitButton;
+    private Rectangle leaderboardButton; // Add leaderboard button rectangle
+
+    //map change variables
+    private String nextMapPath;
+    private boolean mapChangeConfirmed = false;
+    private StaticSprite mapChangeTriggerSprite;
+    private String currentMapPath = "/maps/world01";
 
     public GamePanel() {
         setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -68,7 +86,7 @@ public class GamePanel extends JPanel implements Runnable {
         shopManager = new ShopManager(this);
         gameTimer = new GameTimer(this);
         spriteManager = new SpriteManager(this);
-        combatManager = new TurnBasedCombatManager(this);
+        combatManager = new GameLoopManager(this);
 
         gameState = titleState; // Start in the title state
         startGameThread();
@@ -83,7 +101,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void initMainMenu() {
         try {
-            mainMenuBackground = ImageIO.read(getClass().getResourceAsStream("/tiles/Background/MainMenu.png")); // Replace with your image path
+            mainMenuBackground = ImageIO.read(getClass().getResourceAsStream("/tiles/background/KittenKaboodle.png")); // Replace with your image path
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,10 +109,12 @@ public class GamePanel extends JPanel implements Runnable {
         int buttonWidth = 200;
         int buttonHeight = 50;
         int startX = screenWidth / 2 - buttonWidth / 2;
-        int startY = screenHeight / 2 - buttonHeight;
-        int exitY = screenHeight / 2 + buttonHeight;
+        int startY = screenHeight / 2 - buttonHeight - 75; // Adjust startY to make space for leaderboard
+        int leaderboardY = screenHeight / 2; // Position leaderboard button between start and exit
+        int exitY = screenHeight / 2 + buttonHeight + 75; // Adjust exitY to make space
 
         startButton = new Rectangle(startX, startY, buttonWidth, buttonHeight);
+        leaderboardButton = new Rectangle(startX, leaderboardY, buttonWidth, buttonHeight); // Initialize leaderboard button rectangle
         exitButton = new Rectangle(startX, exitY, buttonWidth, buttonHeight);
     }
 
@@ -130,6 +150,26 @@ public class GamePanel extends JPanel implements Runnable {
         return tiles.mapTileNum;
     }
 
+    // Getter and setter for the score
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+        // Log score change to game log
+        logToGameLog("Score changed to: " + score);
+    }
+
+    // Method to decrease score on enemy collision
+    public void decreaseScore(int amount) {
+        score -= amount;
+        if (score < 0) {
+            score = 0; // Prevent negative scores
+        }
+        logToGameLog("Score decreased by " + amount + ". New score: " + score);
+    }
+
     public void startGameThread() {
         gameThread = new Thread(this);
         gameThread.start();
@@ -139,18 +179,58 @@ public class GamePanel extends JPanel implements Runnable {
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                System.out.println("Mouse Clicked: " + e.getX() + ", " + e.getY());
+
                 if (gameState == combatState) {
                     combatManager.handleMouseClick(e.getX(), e.getY());
                 } else if (gameState == titleState) {
                     if (startButton.contains(e.getX(), e.getY())) {
                         gameState = playState;
                         gameTimer.resumeTimer();
+                    } else if (leaderboardButton.contains(e.getX(), e.getY())) {
+                        EndGameFrame.showLeaderboard(GamePanel.this);
                     } else if (exitButton.contains(e.getX(), e.getY())) {
                         System.exit(0);
+                    } else if (gameState == gameOverState) {
+                        restartGame();
                     }
                 }
             }
         });
+    }
+
+    public void restartGame() {
+        // Reset game variables
+        score = 100;
+        enemiesBeat = 0;
+        catsCollected = 0;
+        itemsBought = 0;
+        healingJuice = 1;
+        playerSpeed = 8;
+        combatManager.setPlayerMaxHealth(100);
+        combatManager.playerHealth = 100;
+
+        // Reset combat specific variables
+        combatManager.combatActive = false;
+        combatManager.combatState = combatManager.COMBAT_INTRO;
+        combatManager.currentEnemy = null;
+
+        // Reset player position and map
+        playerMovement.worldX = playerMovement.worldXOriginal;
+        playerMovement.worldY = playerMovement.worldYOriginal;
+        tiles.loadNewMap("/maps/world01");
+        currentMapPath = "/maps/world01";
+
+        // Reset game timer
+        gameTimer.resetTimer();
+
+
+        // Change game state to title state (main menu)
+        gameState = titleState;
+        repaint();
+
+        // Show the EndGameFrame with a game over message
+        EndGameFrame.showEndGameFrame(this, startTime);
     }
 
     public void run() {
@@ -160,7 +240,14 @@ public class GamePanel extends JPanel implements Runnable {
         while (gameThread != null) {
             update();
             repaint();
-
+            if (keyHandler.escapePressed) {
+                if (soundmgr.musicMenuFrame.isVisible()) {
+                    soundmgr.hideMusicMenu();
+                } else {
+                    soundmgr.showMusicMenu();
+                }
+                keyHandler.escapePressed = false;
+            }
             try {
                 long remainingTime = nextDrawTime - System.nanoTime();
                 remainingTime = remainingTime / 1000000;
@@ -196,17 +283,23 @@ public class GamePanel extends JPanel implements Runnable {
 
     public boolean checkEntitySpriteCollision(int nextWorldX, int nextWorldY, int width, int height) {
         Rectangle playerRect = new Rectangle(nextWorldX, nextWorldY, width, height);
+        boolean collisionDetected = false;
 
         for (EntitySprite entitySprite : spriteManager.entity) {
             if (entitySprite.hasCollision()) {
                 Rectangle entityRect = entitySprite.getCollisionBounds();
-                if (playerRect.intersects(entityRect)) {
-                    return true;
+                if (playerRect.intersects(entityRect) && entitySprite.getIsEnemy()) {
+                    // Always decrease score
+                    decreaseScore(5); //Use the decreaseScore method.
+                    collisionDetected = true;
                 }
             }
         }
+        return collisionDetected;
+    }
 
-        return false;
+    public void startCombat(EntitySprite enemy) {
+        combatManager.startCombat(enemy);
     }
 
     public void update() {
@@ -229,7 +322,11 @@ public class GamePanel extends JPanel implements Runnable {
         } else if (gameState == combatState) {
             // Update combat manager
             combatManager.update();
+            if (combatManager.isPlayerDefeated()) {
+                gameState = gameOverState; //Switch to game over state.
+            }
         }
+        gameTimer.updateTimer(); // Add this line to update the timer every frame
     }
 
     public void paintComponent(Graphics g) {
@@ -244,6 +341,13 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (gameState == combatState) {
             combatManager.draw(g2);
+            drawScore(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == gameOverState) {
+            drawGameOverScreen(g2);
             g2.dispose();
             return;
         }
@@ -262,6 +366,10 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (dialogueManager.showDialogueBox) {
             dialogueManager.drawDialogueBox(g2);
+            if (gameState == mapChangeDialogueState && dialogueManager.currentInteractable != null &&
+                    dialogueManager.currentDialogue.equals("Do you want to enter your home?")) {
+                System.out.println(dialogueManager.currentDialogue);
+            }
         }
 
         if (shopManager.showShopMenu) {
@@ -270,7 +378,41 @@ public class GamePanel extends JPanel implements Runnable {
 
         gameTimer.drawGameTimer(g2);
 
+        drawScore(g2);
+
         g2.dispose();
+    }
+
+    // Method to draw the score in the upper middle of the screen
+    private void drawScore(Graphics2D g2) {
+        // Save the original font and color
+        Font originalFont = g2.getFont();
+        Color originalColor = g2.getColor();
+
+        // Set font and color for score display
+        Font scoreFont = new Font("Arial", Font.BOLD, 24);
+        g2.setFont(scoreFont);
+
+        // Create a background for better visibility
+        String scoreText = "Points: " + score;
+        FontMetrics metrics = g2.getFontMetrics(scoreFont);
+        int textWidth = metrics.stringWidth(scoreText);
+        int textHeight = metrics.getHeight();
+
+        int x = screenWidth / 2 - textWidth / 2;
+        int y = 40;
+
+        // Draw background rectangle
+        g2.setColor(new Color(0, 0, 0, 150)); // Semi-transparent black
+        g2.fillRoundRect(x - 10, y - textHeight + 5, textWidth + 20, textHeight + 10, 10, 10);
+
+        // Draw text
+        g2.setColor(Color.WHITE);
+        g2.drawString(scoreText, x, y);
+
+        // Restore original font and color
+        g2.setFont(originalFont);
+        g2.setColor(originalColor);
     }
 
     private void drawMainMenu(Graphics2D g2) {
@@ -281,13 +423,15 @@ public class GamePanel extends JPanel implements Runnable {
             g2.fillRect(0, 0, screenWidth, screenHeight);
         }
 
-        g2.setColor(new Color(0, 0, 0, 150)); // Semi-transparent black rectangle
+        g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRoundRect(startButton.x - 5, startButton.y - 5, startButton.width + 10, startButton.height + 10, 10, 10);
+        g2.fillRoundRect(leaderboardButton.x - 5, leaderboardButton.y - 5, leaderboardButton.width + 10, leaderboardButton.height + 10, 10, 10); // Draw leaderboard button background
         g2.fillRoundRect(exitButton.x - 5, exitButton.y - 5, exitButton.width + 10, exitButton.height + 10, 10, 10);
 
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.BOLD, 30));
         drawCenteredString(g2, "Start Game", startButton);
+        drawCenteredString(g2, "Leaderboard", leaderboardButton); // Draw leaderboard button text
         drawCenteredString(g2, "Exit Game", exitButton);
     }
 
@@ -313,7 +457,6 @@ public class GamePanel extends JPanel implements Runnable {
         int playerY = playerMovement.worldY;
 
         if (shopManager.showShopMenu && mouseHandler.isLeftMousePressed()) {
-
             for (int i = 0; i < shopManager.shopButtons.size(); i++) {
                 if (shopManager.shopButtons.get(i).contains(mouseHandler.getMouseX(), mouseHandler.getMouseY())) {
                     System.out.println("Button " + i + " Clicked!");
@@ -327,7 +470,21 @@ public class GamePanel extends JPanel implements Runnable {
                         gameTimer.resumeTimer();
                     } else {
                         System.out.println("Item " + shopManager.shopItems.get(i) + " purchased!");
-                        logToGameLog("Item "+shopManager.shopItems.get(i)+" purchased");
+                        logToGameLog("Item " + shopManager.shopItems.get(i) + " purchased");
+                        if(i==0){
+                            healingJuice += 1;
+                            logToGameLog("Player acquired +1 Health Juice.");
+                        }
+
+                        if(i==1){ // speedbuff Item
+                            playerSpeed += 6;
+                            logToGameLog("Player speed increased by 6.");
+                        }
+                        if(i==2){
+                            int currentHP = combatManager.getPlayerMaxHealth();
+                            combatManager.setPlayerMaxHealth(currentHP+=50);
+                            logToGameLog("Player health increased by 50.");
+                        }
                     }
                     mouseHandler.leftMousePressed = false;
                     return;
@@ -348,10 +505,10 @@ public class GamePanel extends JPanel implements Runnable {
                 int closestY = Math.max(npcY, Math.min(playerY, npcY + npcHeight));
 
                 double distance = Math.sqrt(Math.pow(playerX - closestX, 2) + Math.pow(playerY - closestY, 2));
-
+                Rectangle playerRect = playerMovement.getPlayerCollisionBounds();
                 if (distance < dialogueManager.dialogueDistanceThreshold) {
                     if (keyHandler.isEPressed()) {
-                        if (!dialogueManager.dialogueTriggered || dialogueManager.currentInteractable != npc) {
+                        if (!dialogueManager.dialogueTriggered || dialogueManager.currentInteractable != npc && playerRect.intersects(npcBounds)) {
                             dialogueManager.dialogueTriggered = true;
                             dialogueManager.currentInteractable = npc;
                             dialogueManager.currentDialogue = npc.getDialogue();
@@ -366,6 +523,18 @@ public class GamePanel extends JPanel implements Runnable {
                             playerMovement.setPlayerCanMove(true);
                             gameState = playState;
                             gameTimer.resumeTimer();
+                        } else if (npc.getName().startsWith("Your Home")) {
+                            // Game has ended, player reached home
+                            if (!endGameTriggered) {
+                                endGameTriggered = true;
+                                playerMovement.setPlayerCanMove(false);
+                                gameTimer.pauseTimer();
+                                long totalGameTime = System.currentTimeMillis() - gameTimer.getElapsedTime();
+
+                                // Show the end game frame
+                                EndGameFrame.showEndGameFrame(this, totalGameTime);
+                            }
+                            break;
                         }
                         keyHandler.setEPressed(false);
                     }
@@ -454,7 +623,9 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
     }
+
     private String message;
+
     public void logToGameLog(String message) {
         String projectRoot = System.getProperty("user.dir");
         String logFilePath = projectRoot + File.separator + LOG_FILE;
@@ -469,10 +640,10 @@ public class GamePanel extends JPanel implements Runnable {
                 logFile.createNewFile();
             }
 
-            if(this.message!=message){
+            if (this.message != message) {
                 try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logFile, true)))) {
                     LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
                     String formattedDateTime = now.format(formatter);
                     out.println(formattedDateTime + " - " + message);
                     this.message = message;
@@ -484,5 +655,33 @@ public class GamePanel extends JPanel implements Runnable {
         } catch (IOException e) {
             System.err.println("Error creating log file or directories: " + e.getMessage());
         }
+    }
+
+    private void drawGameOverScreen(Graphics2D g2) {
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(Color.RED);
+        g2.setFont(new Font("Arial", Font.BOLD, 48));
+        String gameOverText = "Game Over";
+        FontMetrics metrics = g2.getFontMetrics();
+        int x = (screenWidth - metrics.stringWidth(gameOverText)) / 2;
+        int y = screenHeight / 2;
+        g2.drawString(gameOverText, x, y);
+
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Arial", Font.BOLD, 24));
+        String restartText = "Click to Restart";
+        metrics = g2.getFontMetrics();
+        x = (screenWidth - metrics.stringWidth(restartText)) / 2;
+        y = screenHeight / 2 + 50;
+        g2.drawString(restartText, x, y);
+    }
+
+    private void changeMap(String mapPath) {
+        tiles.loadNewMap(mapPath);
+        currentMapPath = mapPath;
+        playerMovement.worldX = tileSize * maxWorldRow / 4 - screenWidth / 2 + 2000;
+        playerMovement.worldY = tileSize * maxWorldCol / 4 - screenHeight / 2;
     }
 }

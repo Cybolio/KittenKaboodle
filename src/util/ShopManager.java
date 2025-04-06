@@ -19,9 +19,9 @@ public class ShopManager {
 
     private void setupShopMenu() {
         shopMenuRect = new Rectangle(100, 100, gp.getScreenWidth() - 200, gp.getScreenHeight() - 200);
-        shopItems.add("Healing Juice (10 gold)");
-        shopItems.add("Catnip (50 gold)");
-        shopItems.add("Smoke Bomb (80 gold)");
+        shopItems.add("Healing Juice (50 points) - Heals you in battle");
+        shopItems.add("SugaRush Soda (150 points) - Run faster                   + 6 speed");
+        shopItems.add("Steroids (200 points) - Become unstoppable               + 50 max HP");
         shopItems.add("Exit");
 
         int buttonWidth = 500;

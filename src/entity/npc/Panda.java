@@ -9,6 +9,6 @@ public class Panda extends EntitySprite {
         super(gp, "Panda",
                 (gp.getTileSize() * 10) - 450, (gp.getTileSize() * 10) - 400,
                 "/entity/npc/Panda1.png", "/entity/npc/Panda2.png",
-                1f, true, 35, 45, 0.0, 0, "PANDA: Can I get you anything?");
+                1f, true, 7, 20, 0.0, 0, "PANDA: Can I get you anything?");
     }
 }

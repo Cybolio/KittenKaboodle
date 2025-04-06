@@ -9,7 +9,7 @@ public class KittenKaboodle {
             JFrame frame = new JFrame("Kitten Kaboodle");
             GamePanel gamePanel = new GamePanel();
             frame.add(gamePanel);
-            frame.setResizable(true);
+            frame.setResizable(false);
             frame.pack();
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLocationRelativeTo(null);

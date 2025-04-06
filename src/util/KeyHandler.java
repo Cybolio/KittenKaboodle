@@ -6,7 +6,8 @@ import java.awt.event.KeyEvent;
 
 public class KeyHandler {
     public boolean upPressed, downPressed, leftPressed, rightPressed, enterPressed, interactPressed;
-    private boolean ePressed = false; // Added ePressed
+    private boolean ePressed = false;
+    public boolean escapePressed = false; // Add escapePressed
 
     public void setupKeyBindings(JComponent component) {
         InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -18,6 +19,7 @@ public class KeyHandler {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "right");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0, false), "interact");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), "escape"); // Add escape
 
         actionMap.put("up", new AbstractAction() {
             @Override
@@ -46,14 +48,21 @@ public class KeyHandler {
         actionMap.put("interact", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ePressed = true; // Set ePressed to true when 'E' is pressed
+                ePressed = true;
                 interactPressed = true;
             }
         });
-        actionMap.put("enter", new AbstractAction() {
+
+        actionMap.put("escape", new AbstractAction() { // Add escape action
             @Override
             public void actionPerformed(ActionEvent e) {
-                enterPressed = true;
+                escapePressed = true;
+            }
+        });
+        actionMap.put("escapeReleased", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                escapePressed = false;
             }
         });
 
@@ -63,6 +72,7 @@ public class KeyHandler {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "rightReleased");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0, true), "interactReleased");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enterReleased");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, true), "escapeReleased"); // Add escape release
 
         actionMap.put("upReleased", new AbstractAction() {
             @Override
@@ -91,7 +101,7 @@ public class KeyHandler {
         actionMap.put("interactReleased", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ePressed = false; // Reset ePressed when 'E' is released
+                ePressed = false;
                 interactPressed = false;
             }
         });
@@ -99,6 +109,12 @@ public class KeyHandler {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enterPressed = false;
+            }
+        });
+        actionMap.put("escapeReleased", new AbstractAction() { // Add escape release action
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                escapePressed = false;
             }
         });
     }
@@ -127,12 +143,11 @@ public class KeyHandler {
         return interactPressed;
     }
 
-    public boolean isEPressed() { // Added isEPressed() getter
+    public boolean isEPressed() {
         return ePressed;
     }
 
-    public void setEPressed(boolean pressed) { // Added setEPressed() setter
+    public void setEPressed(boolean pressed) {
         this.ePressed = pressed;
     }
 }
-

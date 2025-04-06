@@ -18,7 +18,7 @@ public class TileManager {
 
     public TileManager(GamePanel gp) {
         this.gp = gp;
-        tile = new Tile[15];
+        tile = new Tile[29];
 
         maxCol = gp.maxWorldCol;
         maxRow = gp.maxWorldRow;
@@ -86,6 +86,57 @@ public class TileManager {
             tile[14].image = ImageIO.read(getClass().getResourceAsStream("/tiles/outdoorsLayer02/Rock2.png"));
             tile[14].collision = true;
 
+            tile[15] = new Tile();
+            tile[15].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/01Tile.png"));
+            tile[15].collision = true;
+
+            tile[16] = new Tile();
+            tile[16].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/02Tile.png"));
+            tile[16].collision = true;
+
+            tile[17] = new Tile();
+            tile[17].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/03Tile.png"));
+
+            tile[18] = new Tile();
+            tile[18].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/04Tile.png"));
+            tile[18].collision = true;
+
+            tile[20] = new Tile();
+            tile[20].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/05Tile.png"));
+            tile[20].collision = true;
+
+            tile[21] = new Tile();
+            tile[21].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/06Tile.png"));
+            tile[21].collision = true;
+
+            tile[22] = new Tile();
+            tile[22].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/07Tile.png"));
+            tile[22].collision = true;
+
+            tile[23] = new Tile();
+            tile[23].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/08Tile.png"));
+            tile[23].collision = true;
+
+            tile[24] = new Tile();
+            tile[24].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/09Tile.png"));
+            tile[24].collision = true;
+
+            tile[25] = new Tile();
+            tile[25].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/10Tile.png"));
+            tile[25].collision = true;
+
+            tile[26] = new Tile();
+            tile[26].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/11Tile.png"));
+            tile[26].collision = true;
+
+            tile[27] = new Tile();
+            tile[27].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/12Tile.png"));
+            tile[27].collision = true;
+
+            tile[28] = new Tile();
+            tile[28].image = ImageIO.read(getClass().getResourceAsStream("/tiles/indoor/13Tile.png"));
+            tile[28].collision = true;
+
         } catch (IOException e) {
             System.err.println("Error loading tile images:");
             e.printStackTrace();
@@ -128,10 +179,14 @@ public class TileManager {
     }
 
     public void loadMap() {
+        loadMap("/maps/world01");
+    }
+
+    public void loadMap(String mapPath) {
         try {
-            InputStream is = getClass().getResourceAsStream("/maps/world01");
+            InputStream is = getClass().getResourceAsStream(mapPath);
             if (is == null) {
-                System.err.println("ERROR: Could not find map file: /maps/world01");
+                System.err.println("ERROR: Could not find map file: " + mapPath);
                 return;
             }
 
@@ -160,4 +215,9 @@ public class TileManager {
             e.printStackTrace();
         }
     }
+
+    public void loadNewMap(String mapPath) {
+        loadMap(mapPath);
+    }
 }
+

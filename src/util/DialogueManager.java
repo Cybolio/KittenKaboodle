@@ -3,6 +3,7 @@ package util;
 import Main.GamePanel;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 public class DialogueManager {
     private GamePanel gp;
@@ -16,6 +17,8 @@ public class DialogueManager {
         this.gp = gp;
     }
 
+
+
     public void drawDialogueBox(Graphics2D g2) {
         int boxX = 50;
         int boxY = gp.getScreenHeight() - 150;
@@ -28,5 +31,16 @@ public class DialogueManager {
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.PLAIN, 18));
         g2.drawString(currentDialogue, boxX + 20, boxY + 50);
+
     }
+
+
+    private void drawCenteredString(Graphics2D g2, String text, Rectangle rect) {
+        FontMetrics metrics = g2.getFontMetrics();
+        int x = rect.x + (rect.width - metrics.stringWidth(text)) / 2;
+        int y = rect.y + ((rect.height - metrics.getHeight()) / 2) + metrics.getAscent();
+        g2.drawString(text, x, y);
+    }
+
+
 }

@@ -26,12 +26,14 @@ public class GameTimer {
                     elapsedTime = System.currentTimeMillis() - startTime;
                     formattedTime = formatTime(elapsedTime);
                 }
-
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(100); // Update every 100 milliseconds
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    if (!timerRunning) {
+                        break; // Exit loop if timer is stopped
+                    }
                 }
+
             }
         });
 
@@ -72,5 +74,29 @@ public class GameTimer {
         g2.drawString("Time: " + formattedTime, 11, 31);
         g2.setColor(Color.WHITE);
         g2.drawString("Time: " + formattedTime, 10, 30);
+    }
+
+    // New method to reset the timer
+    public void resetTimer() {
+        stopTimer(); // Stop the current timer thread
+        startTime = System.currentTimeMillis(); // Reset the start time
+        elapsedTime = 0; // Reset the elapsed time
+        formattedTime = "00:00:00"; // Reset the formatted time
+        startTimerThread(); // Start a new timer thread
+    }
+
+    public long getElapsedTime() {
+        return elapsedTime;
+    }
+
+    public String formatElapsedTime(long elapsedTime) {
+        return formatTime(elapsedTime);
+    }
+
+    public void updateTimer() {
+        if (timerRunning && gp.gameState == gp.playState) {
+            elapsedTime = System.currentTimeMillis() - startTime;
+            formattedTime = formatTime(elapsedTime);
+        }
     }
 }
